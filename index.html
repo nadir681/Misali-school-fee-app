@@ -1,54 +1,160 @@
+
 <!DOCTYPE html>
 <html lang="ur">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Misali School Fee App</title>
+<title>Misali School Fee Management</title>
 <style>
-body{font-family:Arial,sans-serif;background:#eef3f0;margin:0;padding:15px}
-.box{max-width:500px;margin:auto;background:white;padding:20px;border-radius:12px}
-h2{text-align:center;color:#126b45}
-input,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;font-size:16px}
-button{background:#126b45;color:white;border:0;border-radius:6px}
-table{width:100%;margin-top:15px;border-collapse:collapse}
-td,th{border:1px solid #ccc;padding:7px;text-align:center}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;color:#172033}
+header{background:#123c69;color:white;text-align:center;padding:22px 10px}
+header h2{margin:5px;font-size:23px}
+.container{max-width:850px;margin:18px auto;padding:12px}
+.card{background:white;padding:16px;border-radius:12px;margin-bottom:15px;box-shadow:0 2px 9px #0001}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{padding:14px;border-radius:10px;background:#e8f2ff;text-align:center}
+.stat b{display:block;font-size:22px;margin-top:8px}
+input,button{font:inherit;padding:12px;border-radius:7px;width:100%;margin:5px 0}
+input{border:1px solid #ccd5e0}
+button{border:0;background:#1769aa;color:white;cursor:pointer}
+.green{background:#15803d}
+.red{background:#b91c1c}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th,td{padding:9px;border:1px solid #ddd;text-align:center}
+th{background:#123c69;color:white}
+.tablewrap{overflow-x:auto}
+.small{padding:7px;font-size:13px;width:auto}
+h3{margin-top:0}
 </style>
 </head>
 <body>
-<div class="box">
-<h2>Misali Superior Public School</h2>
-<h3>Student Fee Record</h3>
-<input id="name" placeholder="Student Name">
-<input id="father" placeholder="Father Name">
-<input id="class" placeholder="Class">
-<input id="fee" type="number" placeholder="Monthly Fee">
-<input id="paid" type="number" placeholder="Fee Paid">
-<button onclick="addStudent()">Save Fee Record</button>
-<div id="result"></div>
+<header>
+<h2>MISALI SUPERIOR PUBLIC SCHOOL</h2>
+<div>School Fee Management System</div>
+</header>
+<div class="container">
+<div class="card">
+<h3>فیس کا خلاصہ</h3>
+<div class="stats">
+<div class="stat">کل طلبہ<b id="total">0</b></div>
+<div class="stat">کل ماہانہ فیس<b id="fees">Rs 0</b></div>
+<div class="stat">جمع شدہ فیس<b id="paid">Rs 0</b></div>
+<div class="stat">بقایا فیس<b id="due">Rs 0</b></div>
+</div>
+</div>
+
+<div class="card">
+<h3>نیا طالب علم شامل کریں</h3>
+<form id="studentForm">
+<input id="name" placeholder="طالب علم کا نام" required>
+<input id="father" placeholder="والد کا نام" required>
+<input id="className" placeholder="کلاس مثلاً 5th" required>
+<input id="roll" placeholder="رول نمبر" required>
+<input id="fee" type="number" min="0" placeholder="ماہانہ فیس (روپے)" required>
+<input id="paidInput" type="number" min="0" placeholder="اب تک جمع شدہ فیس" value="0" required>
+<button type="submit">طالب علم محفوظ کریں</button>
+</form>
+</div>
+
+<div class="card">
+<h3>طلبہ کا ریکارڈ</h3>
+<input id="search" placeholder="نام، رول نمبر یا کلاس تلاش کریں">
+<div class="tablewrap">
+<table>
+<thead><tr>
+<th>نام / رول نمبر</th><th>کلاس</th><th>ماہانہ فیس</th>
+<th>جمع</th><th>بقایا</th><th>کارروائی</th>
+</tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h3>ماہانہ رپورٹ</h3>
+<input type="month" id="month">
+<p>منتخب مہینے میں درج کردہ فیس وصولیاں: <b id="monthTotal">Rs 0</b></p>
+<button onclick="window.print()">رپورٹ پرنٹ کریں</button>
+</div>
 </div>
 <script>
-function addStudent(){
-let n=document.getElementById('name').value;
-let f=document.getElementById('father').value;
-let c=document.getElementById('class').value;
-let fee=Number(document.getElementById('fee').value);
-let paid=Number(document.getElementById('paid').value);
-if(!n||!f||!c||document.getElementById('fee').value===""||document.getElementById('paid').value===""){
-alert('Please fill all fields');
-return;
+let students=JSON.parse(localStorage.getItem("misaliStudents")||"[]");
+let payments=JSON.parse(localStorage.getItem("misaliPayments")||"[]");
+const money=n=>"Rs "+Number(n).toLocaleString("en-PK");
+const el=id=>document.getElementById(id);
+
+function save(){
+ localStorage.setItem("misaliStudents",JSON.stringify(students));
+ localStorage.setItem("misaliPayments",JSON.stringify(payments));
+ render();
 }
-let rows=JSON.parse(localStorage.getItem('students')||'[]');
-rows.push({n,f,c,fee,paid,due:fee-paid});
-localStorage.setItem('students',JSON.stringify(rows));
-showRecords();
+function render(){
+ el("total").textContent=students.length;
+ el("fees").textContent=money(students.reduce((s,x)=>s+x.fee,0));
+ el("paid").textContent=money(students.reduce((s,x)=>s+x.paid,0));
+ el("due").textContent=money(students.reduce((s,x)=>s+Math.max(0,x.fee-x.paid),0));
+ let q=el("search").value.toLowerCase();
+ el("rows").innerHTML="";
+ students.forEach((s,i)=>{
+  if(!(s.name+" "+s.roll+" "+s.className+" "+s.father).toLowerCase().includes(q))return;
+  let tr=document.createElement("tr");
+  [s.name+" / "+s.roll,s.className,money(s.fee),money(s.paid),money(Math.max(0,s.fee-s.paid))].forEach(v=>{
+   let td=document.createElement("td");td.textContent=v;tr.appendChild(td);
+  });
+  let td=document.createElement("td");
+  let add=document.createElement("button");add.textContent="فیس جمع";add.className="small green";
+  add.onclick=()=>collect(i);
+  let receipt=document.createElement("button");receipt.textContent="رسید";receipt.className="small";
+  receipt.onclick=()=>printReceipt(i);
+  let del=document.createElement("button");del.textContent="حذف";del.className="small red";
+  del.onclick=()=>{if(confirm("کیا یہ طالب علم حذف کرنا ہے؟")){students.splice(i,1);save();}};
+  td.append(add,receipt,del);tr.appendChild(td);el("rows").appendChild(tr);
+ });
+ let m=el("month").value;
+ el("monthTotal").textContent=money(payments.filter(p=>p.date.startsWith(m)).reduce((s,p)=>s+p.amount,0));
 }
-function showRecords(){
-let rows=JSON.parse(localStorage.getItem('students')||'[]');
-let html='<table><tr><th>Student</th><th>Class</th><th>Fee</th><th>Paid</th><th>Due</th></tr>';
-rows.forEach(s=>html+='<tr><td>'+s.n+'</td><td>'+s.c+'</td><td>'+s.fee+'</td><td>'+s.paid+'</td><td>'+s.due+'</td></tr>');
-document.getElementById('result').innerHTML=html+'</table>';
+el("studentForm").onsubmit=e=>{
+ e.preventDefault();
+ let fee=Number(el("fee").value),paid=Number(el("paidInput").value);
+ if(paid>fee){alert("جمع شدہ فیس ماہانہ فیس سے زیادہ ہے۔");return;}
+ let s={name:el("name").value.trim(),father:el("father").value.trim(),
+ className:el("className").value.trim(),roll:el("roll").value.trim(),fee,paid};
+ if(students.some(x=>x.roll===s.roll)){alert("یہ رول نمبر پہلے سے موجود ہے۔");return;}
+ students.push(s);
+ if(paid>0)payments.push({roll:s.roll,amount:paid,date:new Date().toISOString().slice(0,10)});
+ e.target.reset();el("paidInput").value=0;save();
+};
+function collect(i){
+ let amount=Number(prompt("کتنی فیس وصول ہوئی؟"));
+ if(!Number.isFinite(amount)||amount<=0)return;
+ if(amount>Math.max(0,students[i].fee-students[i].paid)){
+  alert("رقم بقایا فیس سے زیادہ ہے۔");return;
+ }
+ students[i].paid+=amount;
+ payments.push({roll:students[i].roll,amount,date:new Date().toISOString().slice(0,10)});
+ save();printReceipt(i,amount);
 }
-showRecords();
+function printReceipt(i,amount){
+ let s=students[i];
+ let w=window.open("","_blank");
+ if(!w){alert("رسید کے لیے براؤزر میں پاپ اپ کی اجازت دیں۔");return;}
+ w.document.write(`<html><head><meta charset="UTF-8"><title>Fee Receipt</title></head><body style="font-family:Arial;padding:25px;text-align:center">
+ <h2>MISALI SUPERIOR PUBLIC SCHOOL</h2><h3>فیس کی رسید</h3><hr>
+ <p>تاریخ: ${new Date().toLocaleDateString()}</p>
+ <p>طالب علم: ${s.name}</p><p>والد کا نام: ${s.father}</p>
+ <p>رول نمبر: ${s.roll}</p><p>کلاس: ${s.className}</p>
+ <p>ماہانہ فیس: ${money(s.fee)}</p>
+ <p>اس رسید کی وصولی: ${money(amount===undefined?s.paid:amount)}</p>
+ <p>موجودہ بقایا: ${money(Math.max(0,s.fee-s.paid))}</p>
+ <p>دستخط: __________________</p><button onclick="window.print()">پرنٹ کریں</button>
+ </body></html>`);
+ w.document.close();
+}
+el("search").addEventListener("input",render);
+el("month").value=new Date().toISOString().slice(0,7);
+el("month").addEventListener("change",render);
+render();
 </script>
 </body>
 </html>
