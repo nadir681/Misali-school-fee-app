@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Misali School Fee App</title>
+<style>
+body{font-family:Arial,sans-serif;background:#eef3f0;margin:0;padding:15px}
+.box{max-width:500px;margin:auto;background:white;padding:20px;border-radius:12px}
+h2{text-align:center;color:#126b45}
+input,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;font-size:16px}
+button{background:#126b45;color:white;border:0;border-radius:6px}
+table{width:100%;margin-top:15px;border-collapse:collapse}
+td,th{border:1px solid #ccc;padding:7px;text-align:center}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>Misali Superior Public School</h2>
+<h3>Student Fee Record</h3>
+<input id="name" placeholder="Student Name">
+<input id="father" placeholder="Father Name">
+<input id="class" placeholder="Class">
+<input id="fee" type="number" placeholder="Monthly Fee">
+<input id="paid" type="number" placeholder="Fee Paid">
+<button onclick="addStudent()">Save Fee Record</button>
+<div id="result"></div>
+</div>
+<script>
+function addStudent(){
+let n=document.getElementById('name').value;
+let f=document.getElementById('father').value;
+let c=document.getElementById('class').value;
+let fee=Number(document.getElementById('fee').value);
+let paid=Number(document.getElementById('paid').value);
+if(!n||!f||!c||document.getElementById('fee').value===""||document.getElementById('paid').value===""){
+alert('Please fill all fields');
+return;
+}
+let rows=JSON.parse(localStorage.getItem('students')||'[]');
+rows.push({n,f,c,fee,paid,due:fee-paid});
+localStorage.setItem('students',JSON.stringify(rows));
+showRecords();
+}
+function showRecords(){
+let rows=JSON.parse(localStorage.getItem('students')||'[]');
+let html='<table><tr><th>Student</th><th>Class</th><th>Fee</th><th>Paid</th><th>Due</th></tr>';
+rows.forEach(s=>html+='<tr><td>'+s.n+'</td><td>'+s.c+'</td><td>'+s.fee+'</td><td>'+s.paid+'</td><td>'+s.due+'</td></tr>');
+document.getElementById('result').innerHTML=html+'</table>';
+}
+showRecords();
+</script>
+</body>
+</html>
